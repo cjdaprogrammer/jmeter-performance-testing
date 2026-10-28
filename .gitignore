@@ -1,5 +1,4 @@
-@'
-# Python
+﻿# Python
 .venv/
 __pycache__/
 *.py[cod]
@@ -25,6 +24,4 @@ Thumbs.db
 results/*.jtl
 
 # Generated HTML reports
-# Keep selected reports by adding them explicitly with git add -f
 reports/*
-'@ | Set-Content -Encoding utf8 .gitignore

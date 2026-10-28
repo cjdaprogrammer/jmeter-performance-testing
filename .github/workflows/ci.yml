@@ -1,0 +1,129 @@
+
+name: TaskFlow API and JMeter CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-and-performance-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run API functional tests
+        run: python -m pytest -v
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Download Apache JMeter
+        run: |
+          curl --fail --silent --show-error --location \
+            https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz \
+            --output /tmp/apache-jmeter.tgz
+          tar -xzf /tmp/apache-jmeter.tgz -C /tmp
+
+      - name: Start TaskFlow API
+        run: |
+          mkdir -p results
+          nohup python -m uvicorn app.main:app \
+            --host 127.0.0.1 --port 8000 \
+            > api.log 2>&1 &
+          echo $! > api.pid
+
+      - name: Wait for API health check
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8000/health; then
+              echo
+              exit 0
+            fi
+            sleep 1
+          done
+          cat api.log
+          exit 1
+
+      - name: Run JMeter smoke test
+        run: |
+          /tmp/apache-jmeter-5.6.3/bin/jmeter \
+            -n \
+            -t test-plans/taskflow-baseline.jmx \
+            -Jthreads=1 \
+            -Jrampup=1 \
+            -Jloops=1 \
+            -l results/ci-smoke.jtl \
+            -j results/jmeter.log
+
+      - name: Verify JMeter assertions passed
+        if: always()
+        run: |
+          if [ ! -f results/ci-smoke.jtl ]; then
+            echo "JMeter result file was not created."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import csv
+          import sys
+
+          path = "results/ci-smoke.jtl"
+
+          with open(path, newline="", encoding="utf-8-sig") as file:
+              rows = list(csv.DictReader(file))
+
+          if not rows:
+              print("JMeter produced no samples.")
+              sys.exit(1)
+
+          failures = [
+              row for row in rows
+              if row.get("success", "").strip().lower() != "true"
+          ]
+
+          print(f"JMeter samples: {len(rows)}")
+          print(f"Failed samples: {len(failures)}")
+
+          for row in failures:
+              print(
+                  f"FAILED: {row.get('label', 'unknown sampler')} "
+                  f"code={row.get('responseCode', 'unknown')} "
+                  f"message={row.get('responseMessage', '')}"
+              )
+
+          if failures:
+              sys.exit(1)
+          PY
+
+      - name: Upload CI test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taskflow-ci-test-evidence
+          path: |
+            results/
+            api.log
+          if-no-files-found: warn
+          retention-days: 14
