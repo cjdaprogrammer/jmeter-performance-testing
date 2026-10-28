@@ -1,5 +1,9 @@
 # TaskFlow API Performance Testing with Apache JMeter
 
+[![API and JMeter CI](https://github.com/cjdaprogrammer/jmeter-performance-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/cjdaprogrammer/jmeter-performance-testing/actions/workflows/ci.yml)
+
+A QA portfolio project demonstrating API functional testing and performance testing using Apache JMeter, FastAPI, and pytest.
+
 A QA portfolio project demonstrating API functional testing and performance testing using Apache JMeter, FastAPI, and pytest.
 
 ## Project Objectives
@@ -18,6 +22,22 @@ A QA portfolio project demonstrating API functional testing and performance test
 - FastAPI and Uvicorn
 - pytest
 - Matplotlib
+
+## Continuous Integration
+
+GitHub Actions automatically runs the API functional test suite and a JMeter smoke test on pushes and pull requests targeting `main`. The workflow can also be started manually.
+
+The pipeline:
+- Installs Python dependencies and runs the pytest suite.
+- Sets up Java 21 and Apache JMeter 5.6.3.
+- Starts the TaskFlow API and waits for its health endpoint.
+- Executes the JMeter test plan in non-GUI mode.
+- Verifies that JMeter produced results and that all recorded samples passed.
+- Uploads JMeter results and API logs as a downloadable workflow artifact.
+
+View the [workflow runs and execution evidence](https://github.com/cjdaprogrammer/jmeter-performance-testing/actions).
+
+The CI smoke test is a quick functional and assertion check; it is not a substitute for the separate multi-user performance runs documented below.
 
 ## Performance Test Summary
 
