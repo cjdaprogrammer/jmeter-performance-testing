@@ -2,7 +2,7 @@
 
 [![API and JMeter CI](https://github.com/cjdaprogrammer/jmeter-performance-testing/actions/workflows/ci.yml/badge.svg)](https://github.com/cjdaprogrammer/jmeter-performance-testing/actions/workflows/ci.yml)
 
-A QA portfolio project demonstrating API functional testing and performance testing using Apache JMeter, FastAPI, and pytest.
+A QA portfolio project demonstrating API functional testing and performance testing using Apache JMeter, FastAPI, and pytest. This project includes a reusable JMeter test plan, automated result analysis, performance visualization, test documentation, and GitHub Actions integration.
 
 ## Project Objectives
 
@@ -15,13 +15,17 @@ A QA portfolio project demonstrating API functional testing and performance test
 
 ## Technology Stack
 
-- **Performance testing:** Apache JMeter 5.6.3
-- **Runtime:** Java 21
-- **Programming language:** Python 3.11
-- **API framework:** FastAPI and Uvicorn
-- **Functional testing:** pytest
-- **Data visualization:** Matplotlib
-- **CI/CD:** GitHub Actions
+| Technology | Purpose |
+|---|---|
+| Apache JMeter 5.6.3 | API performance and load testing |
+| Java 21 | JMeter runtime |
+| Python 3.11 | Application and analysis scripts |
+| FastAPI | Task management API |
+| Uvicorn | ASGI application server |
+| pytest | API functional testing |
+| Matplotlib | Performance visualization |
+| GitHub Actions | Continuous integration |
+| Git | Version control |
 
 ## Continuous Integration
 
@@ -38,37 +42,39 @@ The pipeline:
 
 View the [GitHub Actions workflow runs](https://github.com/cjdaprogrammer/jmeter-performance-testing/actions).
 
-The CI smoke test validates a short execution of the test plan. It is not a substitute for the separate multi-user performance runs described below.
+The CI smoke test validates a short execution of the test plan. It is separate from the four local multi-user performance runs summarized below.
 
 ## Performance Test Summary
 
-Four workloads were executed against the local TaskFlow API, with 20 loops per virtual user.
+Four workloads were executed against the local TaskFlow API, with 20 loops per virtual user. The results below were calculated from the raw JTL files using the project's Python analysis script.
 
-| Virtual users | Samples | Average response time | P95 response time | Errors |
-|---:|---:|---:|---:|---:|
-| 1 | 120 | 3.83 ms | 5 ms | 0 |
-| 5 | 600 | 1.69 ms | 3 ms | 0 |
-| 10 | 1,200 | 2.19 ms | 4 ms | 0 |
-| 25 | 3,000 | 1.71 ms | 3 ms | 0 |
-| **Total** | **4,920** | — | — | **0** |
+| Virtual users | Samples | Average response time | P95 response time | P99 response time | Errors |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 120 | 3.83 ms | 5 ms | 26.39 ms | 0 |
+| 5 | 600 | 1.69 ms | 3 ms | 4 ms | 0 |
+| 10 | 1,200 | 2.19 ms | 4 ms | 6 ms | 0 |
+| 25 | 3,000 | 1.71 ms | 3 ms | 4 ms | 0 |
+| **Total** | **4,920** | - | - | - | **0** |
 
 **Project-defined acceptance criterion:** overall P95 response time of 500 ms or less.
 
-All four recorded workloads met this criterion according to the reported results.
+All four recorded workloads met this criterion. No failed samples were recorded across the 4,920 samples.
 
 ### P95 Response-Time Chart
 
 ![TaskFlow API P95 response time by load](docs/screenshots/p95-response-time.png)
 
+The chart compares the 95th-percentile response time for each workload against the project's 500 ms target.
+
 ### Key Observations
 
 - All 4,920 recorded samples completed successfully in the analyzed performance runs.
-- Reported P95 response times ranged from 3 to 5 ms.
-- The single-user run included a 94 ms maximum response time for the health-check sampler. Its cause has not been established.
+- Overall P95 response times ranged from 3 to 5 ms.
+- The single-user run included a 94 ms maximum response time for the health-check sampler. The cause has not been established.
 - Throughput did not increase consistently at every workload level.
-- The recorded response times were below the project-defined 500 ms P95 threshold.
+- All four workloads met the project-defined 500 ms P95 threshold.
 
-These measurements were collected during short-duration tests against a local API using in-memory storage. They do not establish production capacity or guarantee performance under sustained, distributed, or real-world network conditions.
+These measurements were collected during short-duration tests against a local API using in-memory storage. They do not establish production capacity or guarantee performance under sustained traffic, distributed load, or real-world network conditions.
 
 ## Repository Structure
 
@@ -99,16 +105,18 @@ jmeter-performance-testing/
 
 ## Prerequisites
 
-Install or configure the following tools:
+Install or configure:
 
 - Python 3.11
 - Java 21
 - Apache JMeter 5.6.3
 - Git
 
-The commands below use PowerShell and assume JMeter is installed at:
+The PowerShell examples below assume JMeter is installed at:
 
-`%USERPROFILE%\Downloads\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin\jmeter.bat`
+```text
+%USERPROFILE%\Downloads\apache-jmeter-5.6.3\apache-jmeter-5.6.3\bin\jmeter.bat
+```
 
 Adjust the path if your installation is located elsewhere.
 
@@ -116,7 +124,7 @@ Adjust the path if your installation is located elsewhere.
 
 Run these commands from the project root.
 
-### 1. Activate the virtual environment
+### 1. Create and activate the virtual environment
 
 If you have already created `.venv`:
 
@@ -162,7 +170,7 @@ Keep the API running in its own terminal while executing local JMeter tests.
 
 ## Run Functional API Tests
 
-In a second terminal, activate the virtual environment if needed and run:
+In a second terminal, activate the virtual environment if necessary and run:
 
 ```powershell
 python -m pytest -v
@@ -206,9 +214,13 @@ The plan supports configurable thread count, ramp-up time, and loop count throug
   -o "reports\load-25-users-20-loops"
 ```
 
-**Important:** Keep each JTL filename unique. JMeter's `-o` report output directory must be empty or not exist before generating a dashboard. If you rerun a test, choose a new report directory or remove the previous generated report directory first.
+**Important:**
 
-The examples assume the API is already running locally and that the JMeter installation path matches your machine.
+- Ensure the API is running before starting a test.
+- Keep each JTL filename unique so previous results are not overwritten unintentionally.
+- JMeter's `-o` report output directory must be empty or not exist before generating a dashboard. Use a new report directory or remove the old generated report directory before rerunning a test.
+
+The examples assume the JMeter installation path matches your machine.
 
 ### Open a generated HTML dashboard
 
@@ -228,17 +240,19 @@ After generating the required JTL files, run the analysis script:
 python .\scripts\analyze_jmeter_results.py
 ```
 
+The script reports overall and per-sampler metrics, including sample counts, errors, average response times, percentiles, maximum response time, duration, and estimated throughput.
+
 Generate the P95 response-time chart:
 
 ```powershell
 python .\scripts\generate_performance_chart.py
 ```
 
-The analysis script reports overall and per-sampler metrics. The chart-generation script calculates P95 response times from the available raw JTL results and writes the chart to:
+The chart-generation script reads the configured JTL files and writes the chart to:
 
 `docs/screenshots/p95-response-time.png`
 
-Run these scripts after producing the input results they expect. Confirm that the input JTL files correspond to the workloads you want to analyze before updating the documented metrics.
+Run these scripts after producing the input results they expect. Confirm that the input JTL files correspond to the workloads you want to analyze before updating documented metrics.
 
 ## Documentation
 
@@ -268,9 +282,11 @@ Potential next steps include:
 - Monitoring CPU, memory, and other resource metrics during execution.
 - Comparing response times and throughput across repeated test runs.
 - Expanding CI to include additional performance thresholds and historical trend tracking.
+- Comparing JMeter dashboard results against the custom Python analysis.
+- Adding explicit response-code and response-body assertions for each API operation.
 
 ## Conclusion
 
-This project demonstrates a reproducible introduction to API functional testing, performance testing with Apache JMeter, automated result analysis, and CI integration.
+This project demonstrates a repeatable API testing workflow using pytest, Apache JMeter, automated result analysis, performance visualization, and GitHub Actions.
 
-The recorded local test runs met the project's defined P95 response-time criterion. Further monitored, database-backed, longer-duration, and distributed testing would be necessary before drawing conclusions about production scalability.
+The recorded local test runs met the project's defined P95 response-time criterion, with zero recorded sample errors across 4,920 samples. Further monitored, database-backed, longer-duration, and distributed testing would be necessary before drawing conclusions about production scalability.
