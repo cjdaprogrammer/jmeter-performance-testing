@@ -1,0 +1,30 @@
+@'
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Raw JMeter results
+results/*.jtl
+
+# Generated HTML reports
+# Keep selected reports by adding them explicitly with git add -f
+reports/*
+'@ | Set-Content -Encoding utf8 .gitignore
